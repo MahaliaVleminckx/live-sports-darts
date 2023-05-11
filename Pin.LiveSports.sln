@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33627.172
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pin.LiveSports.Blazor", "Pin.LiveSports.Blazor\Pin.LiveSports.Blazor.csproj", "{655AC7E8-CF67-47EE-A5D5-EBB0C86F5115}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pin.LiveSports.Core", "Pin.LiveSports.Core\Pin.LiveSports.Core.csproj", "{F778AF88-0DB8-49B5-AD61-10A906C6538A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{655AC7E8-CF67-47EE-A5D5-EBB0C86F5115}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{655AC7E8-CF67-47EE-A5D5-EBB0C86F5115}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{655AC7E8-CF67-47EE-A5D5-EBB0C86F5115}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{655AC7E8-CF67-47EE-A5D5-EBB0C86F5115}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F778AF88-0DB8-49B5-AD61-10A906C6538A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F778AF88-0DB8-49B5-AD61-10A906C6538A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F778AF88-0DB8-49B5-AD61-10A906C6538A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F778AF88-0DB8-49B5-AD61-10A906C6538A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0B8B71D5-DB48-4B8F-9E22-A570D7E5F22A}
+	EndGlobalSection
+EndGlobal
