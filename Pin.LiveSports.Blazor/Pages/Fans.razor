@@ -1,0 +1,16 @@
+﻿@page "/fans"
+@using Pin.LiveSports.Blazor.Services
+@inject DartGameService Game
+
+<h3>🎯 Live Match</h3>
+
+@if (Game.CurrentMatch.IsStarted)
+{
+    <h4>@Game.CurrentMatch.Player1.Nickname: @Game.CurrentMatch.Player1Score</h4>
+    <h4>@Game.CurrentMatch.Player2.Nickname: @Game.CurrentMatch.Player2Score</h4>
+}
+
+@foreach (var ev in Game.Events)
+{
+    <p> @ev.Player.Nickname - @ev.Message</p>
+}

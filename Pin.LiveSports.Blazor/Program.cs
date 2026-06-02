@@ -22,6 +22,8 @@ namespace Pin.LiveSports.Blazor
             builder.Services.AddScoped<ICountryService, CountryService>();
             builder.Services.AddScoped<IPlayerService, PlayerService>();
 
+            builder.Services.AddSingleton<DartGameService>();
+
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())

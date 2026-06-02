@@ -1,0 +1,52 @@
+﻿@page "/setup"
+@inject IPlayerService PlayerService
+@inject DartGameService Game
+@inject NavigationManager Nav
+@using Pin.LiveSports.Core.Models
+@using Pin.LiveSports.Core.Interfaces
+@using Pin.LiveSports.Blazor.Services
+
+<h3>🎯 Setup Match</h3>
+
+<select @bind="player1Id">
+    @foreach (var p in players)
+    {
+        <option value="@p.Id">@p.Nickname</option>
+    }
+</select>
+
+<select @bind="player2Id">
+    @foreach (var p in players)
+    {
+        <option value="@p.Id">@p.Nickname</option>
+    }
+</select>
+
+<br />
+<br />
+
+<button class="btn btn-success" @onclick="StartMatch">
+    Start Match
+</button>
+
+@code {
+    List<Player> players = new();
+
+    int player1Id;
+    int player2Id;
+
+    protected override void OnInitialized()
+    {
+        players = PlayerService.GetAll();
+    }
+
+    private void StartMatch()
+    {
+        var p1 = players.First(x => x.Id == player1Id);
+        var p2 = players.First(x => x.Id == player2Id);
+
+        Game.StartMatch(p1, p2);
+
+        Nav.NavigateTo("/reporter");
+    }
+}

@@ -1,0 +1,95 @@
+﻿@page "/reporter"
+@inject DartGameService Game
+@using Pin.LiveSports.Core.Models
+@using Pin.LiveSports.Core.Enums
+@using Pin.LiveSports.Blazor.Services
+
+<h3>🎯 Reporter</h3>
+
+@if (Game.CanRenderMatch)
+{
+    <h4>@Game.CurrentMatch.MatchName</h4>
+    <p>@Game.CurrentMatch.Tournament - @Game.CurrentMatch.Location</p>
+
+    <hr />
+
+    <p>
+        @Game.CurrentMatch.Player1?.Nickname (@Game.CurrentMatch.Player1Score)
+        VS
+        @Game.CurrentMatch.Player2?.Nickname (@Game.CurrentMatch.Player2Score)
+    </p>
+
+    <hr />
+
+    <!-- PLAYER -->
+    <select @bind="selectedPlayerId">
+        <option value="@Game.CurrentMatch.Player1.Id">
+            @Game.CurrentMatch.Player1.Nickname
+        </option>
+        <option value="@Game.CurrentMatch.Player2.Id">
+            @Game.CurrentMatch.Player2.Nickname
+        </option>
+    </select>
+
+    <!-- EVENT TYPE -->
+    <select @bind="selectedType">
+        @foreach (var t in Enum.GetValues<EventType>())
+        {
+            <option value="@t">@t</option>
+        }
+    </select>
+
+    <!-- SCORE -->
+    <input type="number" @bind="score" placeholder="Score (optional)" />
+
+    <!-- MESSAGE -->
+    <input @bind="message" placeholder="Message" />
+
+    <br />
+    <br />
+
+    <button class="btn btn-primary" @onclick="AddEvent">
+        Add Event
+    </button>
+}
+else
+{
+    <p>⚠️ No active match. Start a match first.</p>
+}
+
+@code {
+    int selectedPlayerId;
+    EventType selectedType;
+    int? score;
+    string message = "";
+
+    protected override void OnInitialized()
+    {
+        Game.OnChange += async () =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
+    }
+
+    private async Task AddEvent()
+    {
+        if (!Game.CanRenderMatch)
+            return;
+
+        var player =
+            Game.CurrentMatch.Player1.Id == selectedPlayerId
+                ? Game.CurrentMatch.Player1
+                : Game.CurrentMatch.Player2;
+
+        await Game.AddEvent(new DartEvent
+        {
+            Player = player,
+            Type = selectedType,
+            ScoreChange = score ?? 0,
+            Message = message
+        });
+
+        score = null;
+        message = "";
+    }
+}

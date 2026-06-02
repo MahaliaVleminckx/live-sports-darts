@@ -35,6 +35,7 @@ namespace Pin.LiveSports.Blazor.Data
             );
 
             context.SaveChanges();
+
         }
     }
 }

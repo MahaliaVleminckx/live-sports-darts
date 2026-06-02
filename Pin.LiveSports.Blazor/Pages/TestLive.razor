@@ -1,0 +1,41 @@
+﻿@page "/testlive"
+@using Pin.LiveSports.Blazor.Services
+@using Pin.LiveSports.Core.Enums
+@using Pin.LiveSports.Core.Models
+@inject DartGameService Game
+
+<h3>🎯 Test Darts Live Events</h3>
+
+<button @onclick="AddThrow">Add Throw</button>
+
+<ul>
+    @foreach (var ev in Game.Events)
+    {
+        <li>
+            @ev.Time.ToLongTimeString() -
+            @ev.Player -
+            @ev.Message
+        </li>
+    }
+</ul>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Game.OnChange += async () =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
+    }
+
+    private async Task AddThrow()
+    {
+        await Game.AddEvent(new DartEvent
+        {
+            Player = Game.CurrentMatch.Player1,
+            ScoreChange = 20,
+            Message = "Hit 20",
+            Type = EventType.Score
+        });
+    }
+}
