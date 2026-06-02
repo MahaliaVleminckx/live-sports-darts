@@ -1,81 +1,134 @@
 ﻿@page "/reporter"
+
 @inject DartGameService Game
+
 @using Pin.LiveSports.Core.Models
 @using Pin.LiveSports.Core.Enums
 @using Pin.LiveSports.Blazor.Services
 
+
 <h3>🎯 Reporter</h3>
 
-@if (Game.CanRenderMatch)
+@if (!Game.CanRenderMatch)
 {
-    <h4>@Game.CurrentMatch.MatchName</h4>
-    <p>@Game.CurrentMatch.Tournament - @Game.CurrentMatch.Location</p>
-
-    <hr />
-
-    <p>
-        @Game.CurrentMatch.Player1?.Nickname (@Game.CurrentMatch.Player1Score)
-        VS
-        @Game.CurrentMatch.Player2?.Nickname (@Game.CurrentMatch.Player2Score)
-    </p>
-
-    <hr />
-
-    <!-- PLAYER -->
-    <select @bind="selectedPlayerId">
-        <option value="@Game.CurrentMatch.Player1.Id">
-            @Game.CurrentMatch.Player1.Nickname
-        </option>
-        <option value="@Game.CurrentMatch.Player2.Id">
-            @Game.CurrentMatch.Player2.Nickname
-        </option>
-    </select>
-
-    <!-- EVENT TYPE -->
-    <select @bind="selectedType">
-        @foreach (var t in Enum.GetValues<EventType>())
-        {
-            <option value="@t">@t</option>
-        }
-    </select>
-
-    <!-- SCORE -->
-    <input type="number" @bind="score" placeholder="Score (optional)" />
-
-    <!-- MESSAGE -->
-    <input @bind="message" placeholder="Message" />
-
-    <br />
-    <br />
-
-    <button class="btn btn-primary" @onclick="AddEvent">
-        Add Event
-    </button>
+    <div class="alert alert-warning">
+        ⚠️ No active match
+    </div>
 }
 else
 {
-    <p>⚠️ No active match. Start a match first.</p>
+    <div class="card p-3 mb-3">
+        <h4>@Game.CurrentMatch.MatchName</h4>
+
+        <p>@Game.CurrentMatch.Tournament - @Game.CurrentMatch.Location</p>
+        <p>@Game.CurrentMatch.StartTime</p>
+
+        <hr />
+
+        <h5>
+            Set @Game.CurrentMatch.CurrentSet |
+            Leg @Game.CurrentMatch.CurrentLeg
+        </h5>
+
+        <p>
+            @Game.CurrentMatch.Player1.Nickname (@Game.CurrentMatch.Player1Score)
+            VS
+            @Game.CurrentMatch.Player2.Nickname (@Game.CurrentMatch.Player2Score)
+        </p>
+
+        <p>
+            Legs:
+            @Game.CurrentMatch.Player1Legs -
+            @Game.CurrentMatch.Player2Legs
+        </p>
+    </div>
+
+    <div class="card p-3 mb-3">
+        <h5>New Event</h5>
+
+        
+        <label class="form-label mt-2">Speler</label>
+        <select class="form-select" @bind="selectedPlayerId">
+            <option value="@Game.CurrentMatch.Player1.Id">
+                @Game.CurrentMatch.Player1.Nickname
+            </option>
+            <option value="@Game.CurrentMatch.Player2.Id">
+                @Game.CurrentMatch.Player2.Nickname
+            </option>
+        </select>
+
+        
+        <label class="form-label mt-3">Gebeurtenis</label>
+        <select class="form-select" @bind="selectedType">
+            @foreach (var t in Enum.GetValues<EventType>())
+            {
+                <option value="@t">@t</option>
+            }
+        </select>
+
+       
+        <label class="form-label mt-3">Score</label>
+        <input class="form-control"
+               type="number"
+               placeholder="bv. 20, 60, 180"
+               @bind="score" />
+
+      
+        <label class="form-label mt-3">Bericht</label>
+        <input class="form-control"
+               placeholder="bv. Triple 20, misser, checkout poging..."
+               @bind="message" />
+
+        <button class="btn btn-primary mt-3" @onclick="AddEvent">
+            Add Event
+        </button>
+    </div>
+
+    <div class="card p-3">
+        <h5>Events</h5>
+
+        @foreach (var ev in Game.Events.OrderByDescending(e => e.Time))
+        {
+            <div class="border-bottom py-2">
+
+                <b>@ev.Time.ToLongTimeString()</b>
+                -
+                <b>@ev.Player.Nickname</b>
+                -
+                <span>@ev.Type</span>
+
+                @if (ev.ScoreChange > 0)
+                {
+                    <span> | Score: @ev.ScoreChange</span>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(ev.Message))
+                {
+                    <span> | @ev.Message</span>
+                }
+
+            </div>
+        }
+    </div>
 }
 
 @code {
     int selectedPlayerId;
-    EventType selectedType;
+    EventType selectedType = EventType.Score;
     int? score;
     string message = "";
 
     protected override void OnInitialized()
     {
         Game.OnChange += async () =>
-        {
             await InvokeAsync(StateHasChanged);
-        };
+
+        if (Game.CanRenderMatch)
+            selectedPlayerId = Game.CurrentMatch.Player1.Id;
     }
 
     private async Task AddEvent()
     {
-        if (!Game.CanRenderMatch)
-            return;
-
         var player =
             Game.CurrentMatch.Player1.Id == selectedPlayerId
                 ? Game.CurrentMatch.Player1

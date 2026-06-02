@@ -1,16 +1,56 @@
 ﻿@page "/fans"
-@using Pin.LiveSports.Blazor.Services
+
 @inject DartGameService Game
+@using Pin.LiveSports.Blazor.Services
 
 <h3>🎯 Live Match</h3>
 
-@if (Game.CurrentMatch.IsStarted)
+@if (Game.CanRenderMatch)
 {
-    <h4>@Game.CurrentMatch.Player1.Nickname: @Game.CurrentMatch.Player1Score</h4>
-    <h4>@Game.CurrentMatch.Player2.Nickname: @Game.CurrentMatch.Player2Score</h4>
+    <h4>
+        Set @Game.CurrentMatch.CurrentSet |
+        Leg @Game.CurrentMatch.CurrentLeg
+    </h4>
+
+    <h4>
+        @Game.CurrentMatch.Player1.Nickname:
+        @Game.CurrentMatch.Player1Score
+    </h4>
+
+    <h4>
+        @Game.CurrentMatch.Player2.Nickname:
+        @Game.CurrentMatch.Player2Score
+    </h4>
+
+    <p>
+        Legs:
+        @Game.CurrentMatch.Player1Legs -
+        @Game.CurrentMatch.Player2Legs
+    </p>
 }
 
-@foreach (var ev in Game.Events)
+<hr />
+
+@foreach (var ev in Game.Events.OrderByDescending(e => e.Time))
 {
-    <p> @ev.Player.Nickname - @ev.Message</p>
+    <div class="border-bottom py-2">
+
+        <b>@ev.Time.ToLongTimeString()</b>
+        -
+        <b>@ev.Player.Nickname</b>
+        -
+        <span>@ev.Type</span>
+
+        @if (ev.ScoreChange > 0)
+        {
+            <span> | Score: @ev.ScoreChange</span>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ev.Message))
+        {
+            <span> | @ev.Message</span>
+        }
+
+    </div>
 }
+

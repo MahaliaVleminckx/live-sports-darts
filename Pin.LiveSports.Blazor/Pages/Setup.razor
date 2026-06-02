@@ -1,52 +1,138 @@
 ﻿@page "/setup"
-@inject IPlayerService PlayerService
-@inject DartGameService Game
-@inject NavigationManager Nav
+
 @using Pin.LiveSports.Core.Models
 @using Pin.LiveSports.Core.Interfaces
 @using Pin.LiveSports.Blazor.Services
+@inject IPlayerService PlayerService
+@inject DartGameService Game
+@inject NavigationManager Navigation
 
 <h3>🎯 Setup Match</h3>
 
-<select @bind="player1Id">
-    @foreach (var p in players)
-    {
-        <option value="@p.Id">@p.Nickname</option>
-    }
-</select>
+<div class="mb-2">
+    <label>Match naam</label>
+    <input class="form-control"
+           placeholder="bv. PDC World Darts Championship"
+           @bind="matchName" />
+</div>
 
-<select @bind="player2Id">
-    @foreach (var p in players)
-    {
-        <option value="@p.Id">@p.Nickname</option>
-    }
-</select>
+<div class="mb-2">
+    <label>Toernooi</label>
+    <input class="form-control"
+           placeholder="bv. Final"
+           @bind="tournament" />
+</div>
 
-<br />
-<br />
+<div class="mb-2">
+    <label>Locatie</label>
+    <input class="form-control"
+           placeholder="bv. London"
+           @bind="location" />
+</div>
 
-<button class="btn btn-success" @onclick="StartMatch">
-    Start Match
+<div class="mb-2">
+    <label>Starttijd</label>
+    <input type="datetime-local"
+           class="form-control"
+           @bind="startTimeLocal" />
+</div>
+
+<hr />
+
+<div class="mb-2">
+    <label>Legs per set</label>
+    <input type="number"
+           class="form-control"
+           @bind="legsPerSet" />
+    <small class="text-muted">
+        bv. 3 = first to 3 legs wins the set
+    </small>
+</div>
+
+<div class="mb-2">
+    <label>Sets nodig om te winnen</label>
+    <input type="number"
+           class="form-control"
+           @bind="setsToWin" />
+    <small class="text-muted">
+        bv. 3 = best of 5 sets
+    </small>
+</div>
+
+<hr />
+
+<div class="mb-2">
+    <label>Player 1</label>
+    <select class="form-select" @bind="player1Id">
+        @foreach (var p in players)
+        {
+            <option value="@p.Id">@p.Nickname</option>
+        }
+    </select>
+</div>
+
+<div class="mb-2">
+    <label>Player 2</label>
+    <select class="form-select" @bind="player2Id">
+        @foreach (var p in players)
+        {
+            <option value="@p.Id">@p.Nickname</option>
+        }
+    </select>
+</div>
+
+<hr />
+
+<button class="btn btn-success w-100" @onclick="StartMatch">
+    🚀 Start Match
 </button>
 
 @code {
-    List<Player> players = new();
 
-    int player1Id;
-    int player2Id;
+    private List<Player> players = new();
+
+    private int player1Id;
+    private int player2Id;
+
+    private string matchName = "";
+    private string tournament = "";
+    private string location = "";
+
+    private DateTime startTimeLocal = DateTime.Now;
+
+    private int legsPerSet = 3;
+    private int setsToWin = 3;
 
     protected override void OnInitialized()
     {
         players = PlayerService.GetAll();
+
+        if (players.Count >= 2)
+        {
+            player1Id = players[0].Id;
+            player2Id = players[1].Id;
+        }
     }
 
-    private void StartMatch()
+    private async Task StartMatch()
     {
+        if (player1Id == player2Id)
+            return;
+
         var p1 = players.First(x => x.Id == player1Id);
         var p2 = players.First(x => x.Id == player2Id);
 
-        Game.StartMatch(p1, p2);
+        await Game.StartMatch(
+            p1,
+            p2,
+            matchName,
+            tournament,
+            location,
+            startTimeLocal,
+            legsPerSet,
+            setsToWin
+        );
 
-        Nav.NavigateTo("/reporter");
+        Navigation.NavigateTo("/reporter");
     }
 }
