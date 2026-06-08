@@ -10,8 +10,8 @@ namespace Pin.LiveSports.Core.Enums
     {
         Score,
         Checkout,
-        Miss,
-        MatchPoint,
+        NoScore,
+        MatchDart,
         Highlight
     }
 }

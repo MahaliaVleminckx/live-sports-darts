@@ -30,5 +30,8 @@ namespace Pin.LiveSports.Core.Models
 
         public int Player1Legs { get; set; }
         public int Player2Legs { get; set; }
+
+        public int Player1Sets { get; set; }
+        public int Player2Sets { get; set; }
     }
 }

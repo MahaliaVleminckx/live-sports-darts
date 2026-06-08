@@ -3,92 +3,91 @@
 @using Pin.LiveSports.Core.Models
 @using Pin.LiveSports.Core.Interfaces
 @using Pin.LiveSports.Blazor.Services
+
 @inject IPlayerService PlayerService
 @inject DartGameService Game
 @inject NavigationManager Navigation
 
-<h3>🎯 Setup Match</h3>
+<div class="setup-container">
 
-<div class="mb-2">
-    <label>Match naam</label>
-    <input class="form-control"
-           placeholder="bv. PDC World Darts Championship"
-           @bind="matchName" />
+    <div class="card">
+
+        <h4>Match info</h4>
+
+        <label class="label">Match name</label>
+        <input class="input"
+               placeholder="PDC World Championship"
+               @bind="matchName" />
+
+        <label class="label">Tournament</label>
+        <input class="input"
+               placeholder="Final"
+               @bind="tournament" />
+
+        <label class="label">Location</label>
+        <input class="input"
+               placeholder="London"
+               @bind="location" />
+
+        <label class="label">Start time</label>
+        <input class="input"
+               type="datetime-local"
+               @bind="startTimeLocal" />
+
+    </div>
+
+    <div class="card">
+
+        <h4>Rules</h4>
+
+        <label class="label">Legs per set</label>
+        <input class="input"
+               type="number"
+               @bind="legsPerSet" />
+
+        <label class="label">Sets to win</label>
+        <input class="input"
+               type="number"
+               @bind="setsToWin" />
+
+    </div>
+
+    <div class="card">
+
+        <h4>Players</h4>
+
+        <label class="label">Player 1</label>
+        <select class="input" @bind="player1Id">
+            @foreach (var p in players)
+            {
+                <option value="@p.Id">@p.Nickname</option>
+            }
+        </select>
+
+        <label class="label">Player 2</label>
+        <select class="input" @bind="player2Id">
+            @foreach (var p in players)
+            {
+                <option value="@p.Id">@p.Nickname</option>
+            }
+        </select>
+
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(validationMessage))
+    {
+        <div class="validation-error">
+            @validationMessage
+        </div>
+    }
+
+    <button class="btn-start" @onclick="StartMatch">
+        🚀 Start Match
+    </button>
+
 </div>
-
-<div class="mb-2">
-    <label>Toernooi</label>
-    <input class="form-control"
-           placeholder="bv. Final"
-           @bind="tournament" />
-</div>
-
-<div class="mb-2">
-    <label>Locatie</label>
-    <input class="form-control"
-           placeholder="bv. London"
-           @bind="location" />
-</div>
-
-<div class="mb-2">
-    <label>Starttijd</label>
-    <input type="datetime-local"
-           class="form-control"
-           @bind="startTimeLocal" />
-</div>
-
-<hr />
-
-<div class="mb-2">
-    <label>Legs per set</label>
-    <input type="number"
-           class="form-control"
-           @bind="legsPerSet" />
-    <small class="text-muted">
-        bv. 3 = first to 3 legs wins the set
-    </small>
-</div>
-
-<div class="mb-2">
-    <label>Sets nodig om te winnen</label>
-    <input type="number"
-           class="form-control"
-           @bind="setsToWin" />
-    <small class="text-muted">
-        bv. 3 = best of 5 sets
-    </small>
-</div>
-
-<hr />
-
-<div class="mb-2">
-    <label>Player 1</label>
-    <select class="form-select" @bind="player1Id">
-        @foreach (var p in players)
-        {
-            <option value="@p.Id">@p.Nickname</option>
-        }
-    </select>
-</div>
-
-<div class="mb-2">
-    <label>Player 2</label>
-    <select class="form-select" @bind="player2Id">
-        @foreach (var p in players)
-        {
-            <option value="@p.Id">@p.Nickname</option>
-        }
-    </select>
-</div>
-
-<hr />
-
-<button class="btn btn-success w-100" @onclick="StartMatch">
-    🚀 Start Match
-</button>
 
 @code {
-
     private List<Player> players = new();
 
     private int player1Id;
@@ -103,6 +102,8 @@
     private int legsPerSet = 3;
     private int setsToWin = 3;
 
+    private string? validationMessage;
+
     protected override void OnInitialized()
     {
         players = PlayerService.GetAll();
@@ -116,8 +117,55 @@
 
     private async Task StartMatch()
     {
-        if (player1Id == player2Id)
+        validationMessage = null;
+
+        if (players.Count < 2)
+        {
+            validationMessage = "At least 2 players are required.";
             return;
+        }
+
+        if (player1Id == player2Id)
+        {
+            validationMessage = "Player 1 and Player 2 must be different.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(matchName))
+        {
+            validationMessage = "Match name is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(tournament))
+        {
+            validationMessage = "Tournament is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            validationMessage = "Location is required.";
+            return;
+        }
+
+        if (legsPerSet < 1)
+        {
+            validationMessage = "Legs per set must be at least 1.";
+            return;
+        }
+
+        if (setsToWin < 1)
+        {
+            validationMessage = "Sets to win must be at least 1.";
+            return;
+        }
+
+        if (legsPerSet % 2 == 0)
+        {
+            validationMessage = "Legs per set should preferably be an odd number.";
+            return;
+        }
 
         var p1 = players.First(x => x.Id == player1Id);
         var p2 = players.First(x => x.Id == player2Id);

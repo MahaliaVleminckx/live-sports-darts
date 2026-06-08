@@ -1,56 +1,140 @@
 ﻿@page "/fans"
-
 @inject DartGameService Game
 @using Pin.LiveSports.Blazor.Services
+@using Pin.LiveSports.Core.Models
+@using Pin.LiveSports.Core.Enums
 
-<h3>🎯 Live Match</h3>
-
-@if (Game.CanRenderMatch)
+@if (!Game.CanRenderMatch)
 {
-    <h4>
-        Set @Game.CurrentMatch.CurrentSet |
-        Leg @Game.CurrentMatch.CurrentLeg
-    </h4>
-
-    <h4>
-        @Game.CurrentMatch.Player1.Nickname:
-        @Game.CurrentMatch.Player1Score
-    </h4>
-
-    <h4>
-        @Game.CurrentMatch.Player2.Nickname:
-        @Game.CurrentMatch.Player2Score
-    </h4>
-
-    <p>
-        Legs:
-        @Game.CurrentMatch.Player1Legs -
-        @Game.CurrentMatch.Player2Legs
-    </p>
+    <div>No active match</div>
 }
-
-<hr />
-
-@foreach (var ev in Game.Events.OrderByDescending(e => e.Time))
+else
 {
-    <div class="border-bottom py-2">
+    @if (Game.MatchFinished && Game.Winner != null)
+    {
+        <div class="winner-banner">
+            🏆 Congratulations @Game.Winner.Nickname!<br />
+            Winner of the match
+        </div>
+    }
 
-        <b>@ev.Time.ToLongTimeString()</b>
-        -
-        <b>@ev.Player.Nickname</b>
-        -
-        <span>@ev.Type</span>
+    <div class="broadcast-header">
+        <div class="title">@Game.CurrentMatch.MatchName</div>
 
-        @if (ev.ScoreChange > 0)
+        <div class="meta">
+            @Game.CurrentMatch.Tournament • @Game.CurrentMatch.Location
+        </div>
+
+        <div class="live-badge">LIVE</div>
+    </div>
+
+    <div class="broadcast-score">
+
+        <div class="team">
+            <div class="name">@Game.CurrentMatch.Player1?.Nickname</div>
+            <div class="score">@Game.CurrentMatch.Player1Score</div>
+
+            <div class="sub">
+                Legs: <b>@Game.CurrentMatch.Player1Legs</b>
+                • Sets: <b>@Game.CurrentMatch.Player1Sets</b>
+            </div>
+        </div>
+
+        <div class="vs">VS</div>
+
+        <div class="team">
+            <div class="name">@Game.CurrentMatch.Player2?.Nickname</div>
+            <div class="score">@Game.CurrentMatch.Player2Score</div>
+
+            <div class="sub">
+                Legs: <b>@Game.CurrentMatch.Player2Legs</b>
+                • Sets: <b>@Game.CurrentMatch.Player2Sets</b>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="broadcast-averages">
+        <div>
+            @Game.CurrentMatch.Player1?.Nickname:
+            <b>@Game.GetAverage(Game.CurrentMatch.Player1).ToString("0.00")</b>
+        </div>
+
+        <div>
+            @Game.CurrentMatch.Player2?.Nickname:
+            <b>@Game.GetAverage(Game.CurrentMatch.Player2).ToString("0.00")</b>
+        </div>
+    </div>
+
+    <div class="broadcast-info">
+        Set <b>@Game.CurrentMatch.CurrentSet</b>
+        • Leg <b>@Game.CurrentMatch.CurrentLeg</b>
+    </div>
+
+    <div class="broadcast-feed">
+
+        @foreach (var ev in Game.Events.OrderByDescending(e => e.Time))
         {
-            <span> | Score: @ev.ScoreChange</span>
-        }
+            @if (ev.Type == EventType.Highlight && ev.Message.StartsWith("🏆 SET"))
+            {
+                <div class="feed-separator set">
+                    @ev.Message
+                </div>
+            }
+            else if (ev.Type == EventType.Highlight && ev.Message.StartsWith("🎯 LEG"))
+            {
+                <div class="feed-separator leg">
+                    @ev.Message
+                </div>
+            }
+            else
+            {
+                <div class="feed-item">
 
-        @if (!string.IsNullOrWhiteSpace(ev.Message))
-        {
-            <span> | @ev.Message</span>
+                    <div class="time">
+                        @ev.Time.ToLongTimeString()
+                    </div>
+
+                    <div class="content">
+                        <b>@ev.Player.Nickname</b>
+
+                        <span class="badge">
+                            @GetEventLabel(ev)
+                        </span>
+
+                        @if (ev.ScoreChange > 0)
+                        {
+                            <span class="score">
+                                -@ev.ScoreChange
+                            </span>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(ev.Message))
+                        {
+                            <div class="msg">
+                                @ev.Message
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            }
         }
 
     </div>
 }
 
+@code {
+    private string GetEventLabel(DartEvent ev)
+    {
+        return ev.Type switch
+        {
+            EventType.NoScore => "😢 No Score",
+            EventType.Score => "🎯 Score",
+            EventType.Checkout => "💥 Checkout",
+            EventType.MatchDart => "🏆 Match Dart",
+            EventType.Highlight => "⭐ Highlight",
+            _ => ev.Type.ToString()
+        };
+    }
+}

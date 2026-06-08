@@ -1,17 +1,38 @@
 ﻿@page "/"
 @inject NavigationManager Nav
 
-<h1>🏆 LiveSports</h1>
+<div class="home">
 
-<p>Welkom in de sport management applicatie</p>
+    <div class="hero">
 
-<button class="btn btn-primary" @onclick="GoToApp">
-    Start Sport Management
-</button>
+        <div class="logo">🏆 LiveSports</div>
+
+        <div class="subtitle">
+            Real-time darts tracking & live match control system
+        </div>
+
+        <div class="actions-vertical">
+
+            <button class="btn primary" @onclick="GoSetup">
+                ⚙️ Start Setup
+            </button>
+
+            <button class="btn secondary" @onclick="GoManagement">
+                🧑‍💼 Manage Players
+            </button>
+
+            <button class="btn ghost" @onclick="GoReporter">
+                🎯 Reporter Mode
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 
 @code {
-    void GoToApp()
-    {
-        Nav.NavigateTo("/sportmanagement");
-    }
+    void GoSetup() => Nav.NavigateTo("/setup");
+    void GoManagement() => Nav.NavigateTo("/sportmanagement");
+    void GoReporter() => Nav.NavigateTo("/reporter");
 }

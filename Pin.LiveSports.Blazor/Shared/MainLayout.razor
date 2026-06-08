@@ -1,19 +1,38 @@
 ﻿@inherits LayoutComponentBase
 
-<PageTitle>Pin.LiveSports.Blazor</PageTitle>
+<div class="layout">
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    <div class="topbar">
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+        <button class="hamburger" @onclick="ToggleMenu">
+            ☰
+        </button>
+
+        <div class="title">
+            🎯 LiveSports
         </div>
 
-        <article class="content px-4">
+    </div>
+
+    <div class="body">
+
+        <div class="sidebar @(collapsed ? "hidden" : "")">
+            <NavMenu />
+        </div>
+
+        <div class="content">
             @Body
-        </article>
-    </main>
+        </div>
+
+    </div>
+
 </div>
+
+@code {
+    private bool collapsed = false;
+
+    private void ToggleMenu()
+    {
+        collapsed = !collapsed;
+    }
+}

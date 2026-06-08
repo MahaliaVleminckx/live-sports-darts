@@ -1,35 +1,336 @@
-﻿@page "/sportmanagement"
+﻿@*@page "/sportmanagement"
+
+    @using Pin.LiveSports.Core.Interfaces
+    @using Pin.LiveSports.Core.Models
+    @inject ICountryService CountryService
+    @inject IPlayerService PlayerService
+
+    <div class="management-grid">
+
+         COUNTRIES
+        <div class="panel">
+
+            <h4>🌍 Countries</h4>
+
+            <ul class="list">
+                @foreach (var country in countries)
+                {
+                    <li class="row">
+                        <span>@country.Name</span>
+
+                        <div class="actions">
+                            <button class="btn btn-warning btn-sm"
+                                    @onclick="() => StartEditCountry(country)">
+                                Edit
+                            </button>
+
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => DeleteCountry(country.Id)">
+                                Delete
+                            </button>
+                        </div>
+                    </li>
+                }
+            </ul>
+
+            @if (editingCountryId == 0)
+            {
+                <div class="form-box">
+
+                    <input class="input"
+                           @bind="newCountryName"
+                           placeholder="New country" />
+
+                    <button class="btn btn-success btn-sm"
+                            @onclick="AddCountry">
+                        Add Country
+                    </button>
+
+                </div>
+            }
+            else
+            {
+                <div class="edit-box">
+
+                    <h5>Edit Country</h5>
+
+                    <input class="input"
+                           @bind="editCountryName" />
+
+                    <div class="btn-row">
+                        <button class="btn btn-success btn-sm"
+                                @onclick="UpdateCountry">
+                            Save
+                        </button>
+
+                        <button class="btn btn-secondary btn-sm"
+                                @onclick="CancelCountryEdit">
+                            Cancel
+                        </button>
+                    </div>
+
+                </div>
+            }
+
+        </div>
+
+         PLAYERS
+        <div class="panel">
+
+            <h4>🎯 Players</h4>
+
+            <ul class="list">
+                @foreach (var player in players)
+                {
+                    <li class="row">
+                        <span>
+                            <b>@player.Nickname</b> (@player.Name)
+                        </span>
+
+                        <div class="actions">
+                            <button class="btn btn-warning btn-sm"
+                                    @onclick="() => StartEditPlayer(player)">
+                                Edit
+                            </button>
+
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => DeletePlayer(player.Id)">
+                                Delete
+                            </button>
+                        </div>
+                    </li>
+                }
+            </ul>
+
+            @if (editingPlayerId == 0)
+            {
+                <div class="form-box">
+
+                    <input class="input"
+                           @bind="newPlayerName"
+                           placeholder="Name" />
+
+                    <input class="input"
+                           @bind="newPlayerNickname"
+                           placeholder="Nickname" />
+
+                    <select class="input"
+                            @bind="selectedCountryId">
+                        <option value="0">Select country</option>
+                        @foreach (var c in countries)
+                        {
+                            <option value="@c.Id">@c.Name</option>
+                        }
+                    </select>
+
+                    <button class="btn btn-primary"
+                            @onclick="AddPlayer">
+                        Add Player
+                    </button>
+
+                </div>
+            }
+            else
+            {
+                <div class="edit-box">
+
+                    <h5>Edit Player</h5>
+
+                    <input class="input"
+                           @bind="editPlayerName" />
+
+                    <input class="input"
+                           @bind="editPlayerNickname" />
+
+                    <select class="input"
+                            @bind="editCountryId">
+                        @foreach (var c in countries)
+                        {
+                            <option value="@c.Id">@c.Name</option>
+                        }
+                    </select>
+
+                    <div class="btn-row">
+                        <button class="btn btn-success btn-sm"
+                                @onclick="UpdatePlayer">
+                            Save
+                        </button>
+
+                        <button class="btn btn-secondary btn-sm"
+                                @onclick="CancelEdit">
+                            Cancel
+                        </button>
+                    </div>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+    @code {
+        private List<Country> countries = new();
+        private List<Player> players = new();
+
+        private string newCountryName = "";
+
+        private string newPlayerName = "";
+        private string newPlayerNickname = "";
+        private int selectedCountryId;
+
+        private int editingPlayerId = 0;
+        private string editPlayerName = "";
+        private string editPlayerNickname = "";
+        private int editCountryId;
+
+        private int editingCountryId = 0;
+        private string editCountryName = "";
+
+        protected override void OnInitialized()
+        {
+            LoadData();
+        }
+
+        private void LoadData()
+        {
+            countries = CountryService.GetAll();
+            players = PlayerService.GetAll();
+        }
+
+        private void AddCountry()
+        {
+            if (string.IsNullOrWhiteSpace(newCountryName)) return;
+
+            CountryService.Add(new Country { Name = newCountryName });
+            newCountryName = "";
+            LoadData();
+        }
+
+        private void DeleteCountry(int id)
+        {
+            CountryService.Delete(id);
+            LoadData();
+        }
+
+        private void StartEditCountry(Country country)
+        {
+            editingCountryId = country.Id;
+            editCountryName = country.Name;
+        }
+
+        private void UpdateCountry()
+        {
+            if (editingCountryId == 0 || string.IsNullOrWhiteSpace(editCountryName))
+                return;
+
+            CountryService.Update(new Country
+            {
+                Id = editingCountryId,
+                Name = editCountryName
+            });
+
+            CancelCountryEdit();
+            LoadData();
+        }
+
+        private void CancelCountryEdit()
+        {
+            editingCountryId = 0;
+            editCountryName = "";
+        }
+
+        private void AddPlayer()
+        {
+            if (string.IsNullOrWhiteSpace(newPlayerName) ||
+                string.IsNullOrWhiteSpace(newPlayerNickname) ||
+                selectedCountryId == 0)
+                return;
+
+            PlayerService.Add(new Player
+            {
+                Name = newPlayerName,
+                Nickname = newPlayerNickname,
+                CountryId = selectedCountryId
+            });
+
+            newPlayerName = "";
+            newPlayerNickname = "";
+            selectedCountryId = 0;
+
+            LoadData();
+        }
+
+        private void DeletePlayer(int id)
+        {
+            PlayerService.Delete(id);
+            LoadData();
+        }
+
+        private void StartEditPlayer(Player player)
+        {
+            editingPlayerId = player.Id;
+            editPlayerName = player.Name;
+            editPlayerNickname = player.Nickname;
+            editCountryId = player.CountryId;
+        }
+
+        private void UpdatePlayer()
+        {
+            if (editingPlayerId == 0 ||
+                string.IsNullOrWhiteSpace(editPlayerName) ||
+                string.IsNullOrWhiteSpace(editPlayerNickname) ||
+                editCountryId == 0)
+                return;
+
+            PlayerService.Update(new Player
+            {
+                Id = editingPlayerId,
+                Name = editPlayerName,
+                Nickname = editPlayerNickname,
+                CountryId = editCountryId
+            });
+
+            CancelEdit();
+            LoadData();
+        }
+
+        private void CancelEdit()
+        {
+            editingPlayerId = 0;
+            editPlayerName = "";
+            editPlayerNickname = "";
+            editCountryId = 0;
+        }
+    }*@
+
+@page "/sportmanagement"
 
 @using Pin.LiveSports.Core.Interfaces
 @using Pin.LiveSports.Core.Models
 @inject ICountryService CountryService
 @inject IPlayerService PlayerService
 
-<h2>🏆 Sport Management</h2>
-<p>Beheer countries en players via CRUD</p>
+<div class="management-grid">
 
-<hr />
-
-<div class="row">
-
-    
-    <div class="col-md-5 border rounded p-3">
+    <!-- COUNTRIES -->
+    <div class="panel">
 
         <h4>🌍 Countries</h4>
 
-        <ul class="list-unstyled">
+        <ul class="list">
             @foreach (var country in countries)
             {
-                <li class="d-flex justify-content-between align-items-center mb-2">
+                <li class="row">
                     <span>@country.Name</span>
 
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary"
+                    <div class="actions">
+                        <button class="btn btn-warning btn-sm"
                                 @onclick="() => StartEditCountry(country)">
                             Edit
                         </button>
 
-                        <button class="btn btn-outline-danger"
+                        <button class="btn btn-danger btn-sm"
                                 @onclick="() => DeleteCountry(country.Id)">
                             Delete
                         </button>
@@ -38,26 +339,36 @@
             }
         </ul>
 
+        @if (!string.IsNullOrWhiteSpace(countryError))
+        {
+            <div class="validation-error">@countryError</div>
+        }
+
         @if (editingCountryId == 0)
         {
-            <div class="mt-3">
-                <input class="form-control" @bind="newCountryName" placeholder="New country" />
+            <div class="form-box">
 
-                <button class="btn btn-success btn-sm mt-2"
+                <input class="input"
+                       @bind="newCountryName"
+                       placeholder="New country" />
+
+                <button class="btn btn-success btn-sm"
                         @onclick="AddCountry">
                     Add Country
                 </button>
+
             </div>
         }
         else
         {
-            <div class="mt-3 p-2 border rounded bg-light">
+            <div class="edit-box">
 
-                <h6>Edit Country</h6>
+                <h5>Edit Country</h5>
 
-                <input class="form-control" @bind="editCountryName" />
+                <input class="input"
+                       @bind="editCountryName" />
 
-                <div class="mt-2 d-flex gap-2">
+                <div class="btn-row">
                     <button class="btn btn-success btn-sm"
                             @onclick="UpdateCountry">
                         Save
@@ -74,26 +385,26 @@
 
     </div>
 
-   
-    <div class="col-md-7 border rounded p-3">
+    <!-- PLAYERS -->
+    <div class="panel">
 
         <h4>🎯 Players</h4>
 
-        <ul class="list-unstyled">
+        <ul class="list">
             @foreach (var player in players)
             {
-                <li class="d-flex justify-content-between align-items-center mb-2">
+                <li class="row">
                     <span>
                         <b>@player.Nickname</b> (@player.Name)
                     </span>
 
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary"
+                    <div class="actions">
+                        <button class="btn btn-warning btn-sm"
                                 @onclick="() => StartEditPlayer(player)">
                             Edit
                         </button>
 
-                        <button class="btn btn-outline-danger"
+                        <button class="btn btn-danger btn-sm"
                                 @onclick="() => DeletePlayer(player.Id)">
                             Delete
                         </button>
@@ -102,19 +413,24 @@
             }
         </ul>
 
+        @if (!string.IsNullOrWhiteSpace(playerError))
+        {
+            <div class="validation-error">@playerError</div>
+        }
+
         @if (editingPlayerId == 0)
         {
-            <div class="mt-3">
+            <div class="form-box">
 
-                <input class="form-control mb-2"
+                <input class="input"
                        @bind="newPlayerName"
                        placeholder="Name" />
 
-                <input class="form-control mb-2"
+                <input class="input"
                        @bind="newPlayerNickname"
                        placeholder="Nickname" />
 
-                <select class="form-control mb-2"
+                <select class="input"
                         @bind="selectedCountryId">
                     <option value="0">Select country</option>
                     @foreach (var c in countries)
@@ -123,7 +439,7 @@
                     }
                 </select>
 
-                <button class="btn btn-primary btn-sm"
+                <button class="btn btn-primary"
                         @onclick="AddPlayer">
                     Add Player
                 </button>
@@ -132,21 +448,25 @@
         }
         else
         {
-            <div class="mt-3 p-2 border rounded bg-light">
+            <div class="edit-box">
 
-                <h6>Edit Player</h6>
+                <h5>Edit Player</h5>
 
-                <input class="form-control mb-2" @bind="editPlayerName" />
-                <input class="form-control mb-2" @bind="editPlayerNickname" />
+                <input class="input"
+                       @bind="editPlayerName" />
 
-                <select class="form-control mb-2" @bind="editCountryId">
+                <input class="input"
+                       @bind="editPlayerNickname" />
+
+                <select class="input"
+                        @bind="editCountryId">
                     @foreach (var c in countries)
                     {
                         <option value="@c.Id">@c.Name</option>
                     }
                 </select>
 
-                <div class="d-flex gap-2">
+                <div class="btn-row">
                     <button class="btn btn-success btn-sm"
                             @onclick="UpdatePlayer">
                         Save
@@ -165,16 +485,14 @@
 
 </div>
 
-
 @code {
+
     private List<Country> countries = new();
     private List<Player> players = new();
 
     private string newCountryName = "";
-
     private string newPlayerName = "";
     private string newPlayerNickname = "";
-
     private int selectedCountryId;
 
     private int editingPlayerId = 0;
@@ -184,6 +502,9 @@
 
     private int editingCountryId = 0;
     private string editCountryName = "";
+
+    private string? countryError;
+    private string? playerError;
 
     protected override void OnInitialized()
     {
@@ -196,15 +517,31 @@
         players = PlayerService.GetAll();
     }
 
-    
+    // ---------------- COUNTRIES ----------------
+
     private void AddCountry()
     {
-        if (string.IsNullOrWhiteSpace(newCountryName)) return;
+        countryError = null;
 
-        CountryService.Add(new Country
+        if (string.IsNullOrWhiteSpace(newCountryName))
         {
-            Name = newCountryName
-        });
+            countryError = "Country name is required.";
+            return;
+        }
+
+        if (newCountryName.Length < 2)
+        {
+            countryError = "Country name must be at least 2 characters.";
+            return;
+        }
+
+        if (countries.Any(c => c.Name.Equals(newCountryName, StringComparison.OrdinalIgnoreCase)))
+        {
+            countryError = "Country already exists.";
+            return;
+        }
+
+        CountryService.Add(new Country { Name = newCountryName });
 
         newCountryName = "";
         LoadData();
@@ -224,9 +561,16 @@
 
     private void UpdateCountry()
     {
-        if (editingCountryId == 0 ||
-            string.IsNullOrWhiteSpace(editCountryName))
+        countryError = null;
+
+        if (editingCountryId == 0 || string.IsNullOrWhiteSpace(editCountryName))
             return;
+
+        if (editCountryName.Length < 2)
+        {
+            countryError = "Country name too short.";
+            return;
+        }
 
         CountryService.Update(new Country
         {
@@ -244,14 +588,43 @@
         editCountryName = "";
     }
 
+    // ---------------- PLAYERS ----------------
 
-    
     private void AddPlayer()
     {
-        if (string.IsNullOrWhiteSpace(newPlayerName) ||
-            string.IsNullOrWhiteSpace(newPlayerNickname) ||
-            selectedCountryId == 0)
+        playerError = null;
+
+        if (string.IsNullOrWhiteSpace(newPlayerName))
+        {
+            playerError = "Player name is required.";
             return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newPlayerNickname))
+        {
+            playerError = "Nickname is required.";
+            return;
+        }
+
+        if (newPlayerName.Length < 2 || newPlayerNickname.Length < 2)
+        {
+            playerError = "Name and nickname must be at least 2 characters.";
+            return;
+        }
+
+        if (selectedCountryId == 0)
+        {
+            playerError = "Country is required.";
+            return;
+        }
+
+        if (players.Any(p =>
+            p.Name.Equals(newPlayerName, StringComparison.OrdinalIgnoreCase) &&
+            p.Nickname.Equals(newPlayerNickname, StringComparison.OrdinalIgnoreCase)))
+        {
+            playerError = "Player already exists.";
+            return;
+        }
 
         PlayerService.Add(new Player
         {
@@ -283,6 +656,8 @@
 
     private void UpdatePlayer()
     {
+        playerError = null;
+
         if (editingPlayerId == 0 ||
             string.IsNullOrWhiteSpace(editPlayerName) ||
             string.IsNullOrWhiteSpace(editPlayerNickname) ||
@@ -308,6 +683,4 @@
         editPlayerNickname = "";
         editCountryId = 0;
     }
-
-
 }

@@ -1,127 +1,151 @@
 ﻿@page "/reporter"
 
 @inject DartGameService Game
-
-@using Pin.LiveSports.Core.Models
 @using Pin.LiveSports.Core.Enums
+@using Pin.LiveSports.Core.Models
 @using Pin.LiveSports.Blazor.Services
 
-
-<h3>🎯 Reporter</h3>
+<h2 class="page-title">🎯 Reporter Control Room</h2>
 
 @if (!Game.CanRenderMatch)
 {
-    <div class="alert alert-warning">
-        ⚠️ No active match
+    <div class="empty-state">
+        No active match
     </div>
 }
 else
 {
-    <div class="card p-3 mb-3">
-        <h4>@Game.CurrentMatch.MatchName</h4>
+    <div class="reporter-grid">
 
-        <p>@Game.CurrentMatch.Tournament - @Game.CurrentMatch.Location</p>
-        <p>@Game.CurrentMatch.StartTime</p>
+        <div class="panel">
 
-        <hr />
+            <h3>➕ New Event</h3>
 
-        <h5>
-            Set @Game.CurrentMatch.CurrentSet |
-            Leg @Game.CurrentMatch.CurrentLeg
-        </h5>
+            <label>Player</label>
+            <select class="input" @bind="selectedPlayerId">
+                <option value="@Game.CurrentMatch.Player1.Id">
+                    @Game.CurrentMatch.Player1.Nickname
+                </option>
+                <option value="@Game.CurrentMatch.Player2.Id">
+                    @Game.CurrentMatch.Player2.Nickname
+                </option>
+            </select>
 
-        <p>
-            @Game.CurrentMatch.Player1.Nickname (@Game.CurrentMatch.Player1Score)
-            VS
-            @Game.CurrentMatch.Player2.Nickname (@Game.CurrentMatch.Player2Score)
-        </p>
+            <label>Type</label>
+            <select class="input" @bind="selectedType">
+                @foreach (var t in Enum.GetValues<EventType>())
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
 
-        <p>
-            Legs:
-            @Game.CurrentMatch.Player1Legs -
-            @Game.CurrentMatch.Player2Legs
-        </p>
-    </div>
+            <label>
+                Score @(selectedType == EventType.NoScore ? "(disabled)" : "")
+            </label>
 
-    <div class="card p-3 mb-3">
-        <h5>New Event</h5>
+            <input class="input"
+                   type="number"
+                   @bind="score"
+                   disabled="@(selectedType == EventType.NoScore)" />
 
-        
-        <label class="form-label mt-2">Speler</label>
-        <select class="form-select" @bind="selectedPlayerId">
-            <option value="@Game.CurrentMatch.Player1.Id">
-                @Game.CurrentMatch.Player1.Nickname
-            </option>
-            <option value="@Game.CurrentMatch.Player2.Id">
-                @Game.CurrentMatch.Player2.Nickname
-            </option>
-        </select>
+            <label>Message</label>
+            <input class="input" @bind="message" />
 
-        
-        <label class="form-label mt-3">Gebeurtenis</label>
-        <select class="form-select" @bind="selectedType">
-            @foreach (var t in Enum.GetValues<EventType>())
+            @if (!string.IsNullOrWhiteSpace(validationMessage))
             {
-                <option value="@t">@t</option>
+                <div class="validation-error">
+                    @validationMessage
+                </div>
             }
-        </select>
 
-       
-        <label class="form-label mt-3">Score</label>
-        <input class="form-control"
-               type="number"
-               placeholder="bv. 20, 60, 180"
-               @bind="score" />
+            <button class="btn btn-success" @onclick="AddEvent">
+                Add Event
+            </button>
 
-      
-        <label class="form-label mt-3">Bericht</label>
-        <input class="form-control"
-               placeholder="bv. Triple 20, misser, checkout poging..."
-               @bind="message" />
+        </div>
 
-        <button class="btn btn-primary mt-3" @onclick="AddEvent">
-            Add Event
-        </button>
-    </div>
+        <div class="panel">
 
-    <div class="card p-3">
-        <h5>Events</h5>
+            <div class="match-header">
 
-        @foreach (var ev in Game.Events.OrderByDescending(e => e.Time))
-        {
-            <div class="border-bottom py-2">
+                <div class="set-leg">
+                    Set <b>@Game.CurrentMatch.CurrentSet</b>
+                    • Leg <b>@Game.CurrentMatch.CurrentLeg</b>
+                </div>
 
-                <b>@ev.Time.ToLongTimeString()</b>
-                -
-                <b>@ev.Player.Nickname</b>
-                -
-                <span>@ev.Type</span>
+                <div class="scoreboard">
 
-                @if (ev.ScoreChange > 0)
-                {
-                    <span> | Score: @ev.ScoreChange</span>
-                }
+                    <div class="player">
+                        <div class="name">@Game.CurrentMatch.Player1.Nickname</div>
+                        <div class="score">@Game.CurrentMatch.Player1Score</div>
+                        <div class="meta">
+                            Sets: @Game.CurrentMatch.Player1Sets |
+                            Legs: @Game.CurrentMatch.Player1Legs
+                        </div>
+                    </div>
 
-                @if (!string.IsNullOrWhiteSpace(ev.Message))
-                {
-                    <span> | @ev.Message</span>
-                }
+                    <div class="vs">VS</div>
+
+                    <div class="player">
+                        <div class="name">@Game.CurrentMatch.Player2.Nickname</div>
+                        <div class="score">@Game.CurrentMatch.Player2Score</div>
+                        <div class="meta">
+                            Sets: @Game.CurrentMatch.Player2Sets |
+                            Legs: @Game.CurrentMatch.Player2Legs
+                        </div>
+                    </div>
+
+                </div>
 
             </div>
-        }
+
+            <h3>📡 Live Events</h3>
+
+            <div class="timeline">
+                @foreach (var ev in Game.Events.OrderByDescending(e => e.Time))
+                {
+                    <div class="event">
+
+                        <div class="event-header">
+                            <b>@ev.Player.Nickname</b>
+                            <span class="badge">@ev.Type</span>
+
+                            @if (ev.ScoreChange > 0)
+                            {
+                                <span class="score">+@ev.ScoreChange</span>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(ev.Message))
+                        {
+                            <div class="message">@ev.Message</div>
+                        }
+
+                        <div class="time">
+                            @ev.Time.ToLongTimeString()
+                        </div>
+
+                    </div>
+                }
+            </div>
+
+        </div>
+
     </div>
 }
 
 @code {
+
     int selectedPlayerId;
     EventType selectedType = EventType.Score;
     int? score;
     string message = "";
 
+    string? validationMessage;
+
     protected override void OnInitialized()
     {
-        Game.OnChange += async () =>
-            await InvokeAsync(StateHasChanged);
+        Game.OnChange += async () => await InvokeAsync(StateHasChanged);
 
         if (Game.CanRenderMatch)
             selectedPlayerId = Game.CurrentMatch.Player1.Id;
@@ -129,6 +153,43 @@ else
 
     private async Task AddEvent()
     {
+        validationMessage = null;
+
+        if (!Game.CanRenderMatch)
+        {
+            validationMessage = "No active match.";
+            return;
+        }
+
+       
+        if (selectedType != EventType.NoScore)
+        {
+            if (!score.HasValue)
+            {
+                validationMessage = "Score is required.";
+                return;
+            }
+
+            if (score > 180)
+            {
+                validationMessage = "Score cannot be higher than 180.";
+                return;
+            }
+
+            if (score < 0)
+            {
+                validationMessage = "Score cannot be negative.";
+                return;
+            }
+        }
+
+        if (selectedType == EventType.NoScore)
+        {
+            score = null;
+        }
+
+        var finalType = selectedType;
+
         var player =
             Game.CurrentMatch.Player1.Id == selectedPlayerId
                 ? Game.CurrentMatch.Player1
@@ -137,7 +198,7 @@ else
         await Game.AddEvent(new DartEvent
         {
             Player = player,
-            Type = selectedType,
+            Type = finalType,
             ScoreChange = score ?? 0,
             Message = message
         });
