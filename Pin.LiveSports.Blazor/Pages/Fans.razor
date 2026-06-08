@@ -1,8 +1,8 @@
 ﻿@page "/fans"
 @inject DartGameService Game
-@using Pin.LiveSports.Blazor.Services
-@using Pin.LiveSports.Core.Models
 @using Pin.LiveSports.Core.Enums
+@using Pin.LiveSports.Blazor.Services
+@implements IDisposable
 
 @if (!Game.CanRenderMatch)
 {
@@ -13,18 +13,15 @@ else
     @if (Game.MatchFinished && Game.Winner != null)
     {
         <div class="winner-banner">
-            🏆 Congratulations @Game.Winner.Nickname!<br />
-            Winner of the match
+            🏆 Congratulations @Game.Winner.Nickname!
         </div>
     }
 
     <div class="broadcast-header">
         <div class="title">@Game.CurrentMatch.MatchName</div>
-
         <div class="meta">
             @Game.CurrentMatch.Tournament • @Game.CurrentMatch.Location
         </div>
-
         <div class="live-badge">LIVE</div>
     </div>
 
@@ -75,66 +72,43 @@ else
 
         @foreach (var ev in Game.Events.OrderByDescending(e => e.Time))
         {
-            @if (ev.Type == EventType.Highlight && ev.Message.StartsWith("🏆 SET"))
-            {
-                <div class="feed-separator set">
-                    @ev.Message
+            <div class="feed-item">
+                <div class="time">@ev.Time.ToLongTimeString()</div>
+
+                <div class="content">
+                    <b>@ev.Player.Nickname</b>
+                    <span class="badge">@ev.Type</span>
+
+                    @if (ev.ScoreChange > 0)
+                    {
+                        <span class="score">-@ev.ScoreChange</span>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(ev.Message))
+                    {
+                        <div class="msg">@ev.Message</div>
+                    }
                 </div>
-            }
-            else if (ev.Type == EventType.Highlight && ev.Message.StartsWith("🎯 LEG"))
-            {
-                <div class="feed-separator leg">
-                    @ev.Message
-                </div>
-            }
-            else
-            {
-                <div class="feed-item">
-
-                    <div class="time">
-                        @ev.Time.ToLongTimeString()
-                    </div>
-
-                    <div class="content">
-                        <b>@ev.Player.Nickname</b>
-
-                        <span class="badge">
-                            @GetEventLabel(ev)
-                        </span>
-
-                        @if (ev.ScoreChange > 0)
-                        {
-                            <span class="score">
-                                -@ev.ScoreChange
-                            </span>
-                        }
-
-                        @if (!string.IsNullOrWhiteSpace(ev.Message))
-                        {
-                            <div class="msg">
-                                @ev.Message
-                            </div>
-                        }
-                    </div>
-
-                </div>
-            }
+            </div>
         }
 
     </div>
 }
 
 @code {
-    private string GetEventLabel(DartEvent ev)
+
+    protected override void OnInitialized()
     {
-        return ev.Type switch
-        {
-            EventType.NoScore => "😢 No Score",
-            EventType.Score => "🎯 Score",
-            EventType.Checkout => "💥 Checkout",
-            EventType.MatchDart => "🏆 Match Dart",
-            EventType.Highlight => "⭐ Highlight",
-            _ => ev.Type.ToString()
-        };
+        Game.OnChange += UpdateUI;
+    }
+
+    private async Task UpdateUI()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Game.OnChange -= UpdateUI;
     }
 }

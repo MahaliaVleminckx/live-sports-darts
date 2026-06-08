@@ -1,4 +1,5 @@
 ﻿using Pin.LiveSports.Core.Models;
+using Pin.LiveSports.Core.Enums;
 
 namespace Pin.LiveSports.Blazor.Services
 {
@@ -15,7 +16,6 @@ namespace Pin.LiveSports.Blazor.Services
         public bool MatchFinished { get; private set; }
         public Player? Winner { get; private set; }
 
-    
         private readonly Dictionary<int, List<int>> _playerScores = new();
 
         public bool CanRenderMatch =>
@@ -60,14 +60,14 @@ namespace Pin.LiveSports.Blazor.Services
             };
 
             Events.Clear();
-            _legFinished = false;
-
-            MatchFinished = false;
-            Winner = null;
-
             _playerScores.Clear();
+
             _playerScores[p1.Id] = new List<int>();
             _playerScores[p2.Id] = new List<int>();
+
+            _legFinished = false;
+            MatchFinished = false;
+            Winner = null;
 
             await Notify();
         }
@@ -88,6 +88,7 @@ namespace Pin.LiveSports.Blazor.Services
 
             Events.Add(ev);
 
+            
             if (ev.ScoreChange > 0)
             {
                 if (ev.Player.Id == CurrentMatch.Player1.Id)
@@ -99,19 +100,17 @@ namespace Pin.LiveSports.Blazor.Services
             if (!_playerScores.ContainsKey(ev.Player.Id))
                 _playerScores[ev.Player.Id] = new List<int>();
 
-            int score = ev.Type == Core.Enums.EventType.NoScore
-                ? 0
-                : ev.ScoreChange;
-
-            _playerScores[ev.Player.Id].Add(score);
+            int value = ev.Type == EventType.NoScore ? 0 : ev.ScoreChange;
+            _playerScores[ev.Player.Id].Add(value);
 
             CheckLegWin();
+
             await Notify();
         }
 
         public double GetAverage(Player player)
         {
-            if (!_playerScores.ContainsKey(player.Id))
+            if (player == null || !_playerScores.ContainsKey(player.Id))
                 return 0;
 
             var list = _playerScores[player.Id];
@@ -122,35 +121,33 @@ namespace Pin.LiveSports.Blazor.Services
             return list.Average();
         }
 
+       
         private void CheckLegWin()
         {
             var match = CurrentMatch;
 
             if (match.Player1Score <= 0)
                 HandleLegWin(match.Player1);
-
             else if (match.Player2Score <= 0)
                 HandleLegWin(match.Player2);
         }
 
         private void HandleLegWin(Player winner)
         {
-            var match = CurrentMatch;
-
             _legFinished = true;
 
             Events.Add(new DartEvent
             {
                 Player = winner,
                 Time = DateTime.Now,
-                Type = Core.Enums.EventType.Highlight,
-                Message = $"🎯 LEG {match.CurrentLeg} won by {winner.Nickname}"
+                Type = EventType.Highlight,
+                Message = $"🎯 LEG {CurrentMatch.CurrentLeg} won by {winner.Nickname}"
             });
 
-            if (winner.Id == match.Player1.Id)
-                match.Player1Legs++;
+            if (winner.Id == CurrentMatch.Player1.Id)
+                CurrentMatch.Player1Legs++;
             else
-                match.Player2Legs++;
+                CurrentMatch.Player2Legs++;
 
             if (IsSetWonBy(winner))
             {
@@ -158,45 +155,38 @@ namespace Pin.LiveSports.Blazor.Services
                 return;
             }
 
-            match.CurrentLeg++;
-
+            CurrentMatch.CurrentLeg++;
             ResetLeg();
         }
 
         private bool IsSetWonBy(Player player)
         {
-            var match = CurrentMatch;
-
-            return player.Id == match.Player1.Id
-                ? match.Player1Legs >= match.LegsToWinSet
-                : match.Player2Legs >= match.LegsToWinSet;
+            return player.Id == CurrentMatch.Player1.Id
+                ? CurrentMatch.Player1Legs >= CurrentMatch.LegsToWinSet
+                : CurrentMatch.Player2Legs >= CurrentMatch.LegsToWinSet;
         }
 
         private bool IsMatchWonBy(Player player)
         {
-            var match = CurrentMatch;
-
-            return player.Id == match.Player1.Id
-                ? match.Player1Sets >= match.SetsToWinMatch
-                : match.Player2Sets >= match.SetsToWinMatch;
+            return player.Id == CurrentMatch.Player1.Id
+                ? CurrentMatch.Player1Sets >= CurrentMatch.SetsToWinMatch
+                : CurrentMatch.Player2Sets >= CurrentMatch.SetsToWinMatch;
         }
 
         private void HandleSetWin(Player winner)
         {
-            var match = CurrentMatch;
-
             Events.Add(new DartEvent
             {
                 Player = winner,
                 Time = DateTime.Now,
-                Type = Core.Enums.EventType.Highlight,
-                Message = $"🏆 SET {match.CurrentSet} won by {winner.Nickname}"
+                Type = EventType.Highlight,
+                Message = $"🏆 SET {CurrentMatch.CurrentSet} won by {winner.Nickname}"
             });
 
-            if (winner.Id == match.Player1.Id)
-                match.Player1Sets++;
+            if (winner.Id == CurrentMatch.Player1.Id)
+                CurrentMatch.Player1Sets++;
             else
-                match.Player2Sets++;
+                CurrentMatch.Player2Sets++;
 
             if (IsMatchWonBy(winner))
             {
@@ -207,19 +197,17 @@ namespace Pin.LiveSports.Blazor.Services
                 {
                     Player = winner,
                     Time = DateTime.Now,
-                    Type = Core.Enums.EventType.Highlight,
+                    Type = EventType.Highlight,
                     Message = $"👑 MATCH WON BY {winner.Nickname}"
                 });
 
                 return;
             }
 
-            match.CurrentSet++;
-
-            match.Player1Legs = 0;
-            match.Player2Legs = 0;
-
-            match.CurrentLeg = 1;
+            CurrentMatch.CurrentSet++;
+            CurrentMatch.Player1Legs = 0;
+            CurrentMatch.Player2Legs = 0;
+            CurrentMatch.CurrentLeg = 1;
 
             ResetLeg();
         }
@@ -228,14 +216,15 @@ namespace Pin.LiveSports.Blazor.Services
         {
             CurrentMatch.Player1Score = 501;
             CurrentMatch.Player2Score = 501;
-
             _legFinished = false;
         }
 
         private async Task Notify()
         {
-            if (OnChange != null)
-                await OnChange.Invoke();
+            if (OnChange == null)
+                return;
+
+            await OnChange.Invoke();
         }
     }
 }
