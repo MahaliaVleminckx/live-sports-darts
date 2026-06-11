@@ -7,7 +7,8 @@ namespace Pin.LiveSports.Blazor.Services
     {
         public DartMatch CurrentMatch { get; private set; } = new();
 
-        public List<DartEvent> Events { get; } = new();
+        // C# 12 Collection Expression
+        public List<DartEvent> Events { get; } = [];
 
         public event Func<Task>? OnChange;
 
@@ -62,8 +63,9 @@ namespace Pin.LiveSports.Blazor.Services
             Events.Clear();
             _playerScores.Clear();
 
-            _playerScores[p1.Id] = new List<int>();
-            _playerScores[p2.Id] = new List<int>();
+            // C# 12 Collection Expressions
+            _playerScores[p1.Id] = [];
+            _playerScores[p2.Id] = [];
 
             _legFinished = false;
             MatchFinished = false;
@@ -88,7 +90,6 @@ namespace Pin.LiveSports.Blazor.Services
 
             Events.Add(ev);
 
-            
             if (ev.ScoreChange > 0)
             {
                 if (ev.Player.Id == CurrentMatch.Player1.Id)
@@ -98,15 +99,22 @@ namespace Pin.LiveSports.Blazor.Services
             }
 
             if (!_playerScores.ContainsKey(ev.Player.Id))
-                _playerScores[ev.Player.Id] = new List<int>();
+                _playerScores[ev.Player.Id] = [];
 
-            int value = ev.Type == EventType.NoScore ? 0 : ev.ScoreChange;
-            _playerScores[ev.Player.Id].Add(value);
+            _playerScores[ev.Player.Id].Add(CalculateScore(ev));
 
             CheckLegWin();
 
             await Notify();
         }
+
+        // C# 12 Switch Expression
+        private static int CalculateScore(DartEvent ev) =>
+            ev.Type switch
+            {
+                EventType.NoScore => 0,
+                _ => ev.ScoreChange
+            };
 
         public double GetAverage(Player player)
         {
@@ -121,7 +129,6 @@ namespace Pin.LiveSports.Blazor.Services
             return list.Average();
         }
 
-       
         private void CheckLegWin()
         {
             var match = CurrentMatch;
@@ -205,8 +212,10 @@ namespace Pin.LiveSports.Blazor.Services
             }
 
             CurrentMatch.CurrentSet++;
+
             CurrentMatch.Player1Legs = 0;
             CurrentMatch.Player2Legs = 0;
+
             CurrentMatch.CurrentLeg = 1;
 
             ResetLeg();
@@ -216,6 +225,7 @@ namespace Pin.LiveSports.Blazor.Services
         {
             CurrentMatch.Player1Score = 501;
             CurrentMatch.Player2Score = 501;
+
             _legFinished = false;
         }
 
