@@ -1,4 +1,4 @@
-# Pin.LiveSport# Live Sports – Darts
+# Live Sports – Darts
 
 A real-time darts match reporting application built with **Blazor Server and .NET 8**.
 
